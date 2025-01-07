@@ -4,20 +4,27 @@ import pygame
 from constants import HEALTH_BAR_WIDTH, HEALTH_BAR_HEIGHT
 
 class Minion(ArtifactInterface):
+	ROUTES = {
+		'top': [(40,380), (40,60), (450,60), (665, 60), (745,80)],
+		'mid': [(296,480), (460,300), (586,170), (760,110), (745,80)],
+		'bot': [(420,710), (760,710), (760,250), (760,110), (745,80)]
+	}
+
 	def __init__(
 			self,
 			x=40,
-			y=800,
+			y=710,
 			radius=10,
 			color=(0, 0, 255),
 			hp=2000,
 			damage=5,
 			artifact_range=0,
-			velocity=1.5,
+			speed=1.5,
 			team=None,
 			artifact_type = 'minion',
 			sprite = 'sprites/blue_minion.png',
-			shoot_position = (-10, 3)
+			shoot_position = (-10, 3), 
+			lane='top'
 		):
 		self.id = uuid.uuid4()
 		self.position = pygame.Vector2(x, y)
@@ -27,11 +34,13 @@ class Minion(ArtifactInterface):
 		self.current_hp = hp
 		self.damage = damage
 		self.range = radius + artifact_range
-		self.velocity = velocity
+		self.speed = speed
 		self.team = team
 		self.artifact_type = artifact_type
 		self.sprite = sprite
 		self.shoot_position = pygame.Vector2(shoot_position)
+		self.lane = lane
+		self.current_route_point = 0
 
 	def __repr__(self):
 		return f'{self.artifact_type}-{self.id} {self.current_hp}'
@@ -56,8 +65,15 @@ class Minion(ArtifactInterface):
 							 HEALTH_BAR_WIDTH * life_bar_value,
 							 HEALTH_BAR_HEIGHT))
 
-	def move(self, x_inc=0, y_inc=0):
-		self.position += pygame.Vector2(x_inc, -y_inc)
+	def move(self):
+		#self.position += pygame.Vector2(x_inc, -y_inc)
+		if self.current_route_point < len(self.ROUTES[self.lane]):
+			direction = pygame.math.Vector2(self.ROUTES[self.lane][self.current_route_point]) - pygame.math.Vector2(self.position)
+			if direction.length() > self.speed:
+				direction = direction.normalize() * self.speed
+			self.position = pygame.math.Vector2(self.position[0] + direction.x, self.position[1] + direction.y)
+			if self.position == self.ROUTES[self.lane][self.current_route_point]:
+				self.current_route_point += 1
 
 	def in_range(self, objects):
 		objects_in_range = []

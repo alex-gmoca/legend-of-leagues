@@ -7,19 +7,20 @@ CHAMPION_WALKING_3, CHAMPION_WALKING_4, CHAMPION_WALKING_5, CHAMPION_WALKING_6, 
 CHAMPION_ATTACKING_1, CHAMPION_ATTACKING_2, CHAMPION_ATTACKING_3, CHAMPION_ATTACKING_4, 
 CHAMPION_ATTACKING_5, CHAMPION_ATTACKING_6)
 from sprite_sheet import SpriteSheet
+from summoner_spell import Flash
 
 class Champion(ArtifactInterface):
 
 	def __init__(
 			self,
-			x=400,
+			x=40,
 			y=780,
 			radius=20,
 			color=(0, 255, 0),
 			hp=10000,
 			damage=5,
 			artifact_range=10,
-			velocity=2,
+			speed=2,
 			team=None,
 			artifact_type = 'champion',
 			sprite_sheet = None,
@@ -34,7 +35,7 @@ class Champion(ArtifactInterface):
 		self.current_hp = hp
 		self.damage = damage
 		self.range = radius + artifact_range
-		self.velocity = velocity
+		self.speed = speed
 		self.team = team
 		self.artifact_type = artifact_type
 		self.sprite_sheet = SpriteSheet(sprite_sheet)
@@ -50,6 +51,8 @@ class Champion(ArtifactInterface):
 		self.last_orientation = 'R'
 		self.current_walking_frame = sprite_frames(5,5)
 		self.current_attacking_frame = sprite_frames(5,5)
+		self.summoner_spell_d = Flash()
+		self.summoner_spell_f = None
 		self.generate_sprites()
 
 	def generate_sprites(self):
@@ -122,8 +125,8 @@ class Champion(ArtifactInterface):
 			mouse_target_position = pygame.Vector2(get_mouse_position())
 			direction = mouse_target_position - self.position
 			if direction.length() != 0:
-				direction = direction.normalize() * self.velocity
-		if (mouse_target_position - self.position).length() > self.velocity:
+				direction = direction.normalize() * self.speed
+		if (mouse_target_position - self.position).length() > self.speed:
 			self.position += direction
 			if self.position.x < mouse_target_position.x:
 				self.current_orientation = 'R'

@@ -3,21 +3,20 @@ import uuid
 import pygame
 from constants import HEALTH_BAR_WIDTH, HEALTH_BAR_HEIGHT
 
-class Tower(ArtifactInterface):
+class Nexus(ArtifactInterface):
 	def __init__(
 			self,
-			x=40,
-			y=800,
+			x=775,
+			y=40,
 			radius=20,
 			color=(255, 0, 0),
-			hp=20000,
-			damage=10,
-			artifact_range=100,
+			hp=200000,
+			damage=0,
+			artifact_range=0,
 			speed=0,
 			team=None,
-			artifact_type = 'tower',
-			sprite = 'sprites/red_tower.png',
-			shoot_position = (6, 37)
+			artifact_type = 'nexus',
+			sprite = 'sprites/red_nexus.png'
 		):
 		self.id = uuid.uuid4()
 		self.position = pygame.Vector2(x, y)
@@ -31,13 +30,18 @@ class Tower(ArtifactInterface):
 		self.team = team
 		self.artifact_type = artifact_type
 		self.sprite = sprite
-		self.shoot_position = pygame.Vector2(shoot_position)
 
 	def __repr__(self):
 		return f'{self.artifact_type}-{self.id} {self.current_hp}'
 
 	def __str__(self):
 		return f'[{self.artifact_type}] {self.id}'
+
+	def hit(self):
+		pass
+
+	def move(self):
+		pass
 
 	def draw(self, surface):
 		life_bar_value = self.current_hp * 100 / self.hp / 100
@@ -46,7 +50,7 @@ class Tower(ArtifactInterface):
 			sprite = pygame.image.load(self.sprite)
 			surface.blit(sprite, (self.position.x - self.radius, self.position.y - self.radius -30))
 			pygame.draw.rect(surface, (0, 255, 0), pygame.Rect(self.position.x
-							 + self.radius-30, self.position.y + self.radius - 80,
+							 + self.radius - 25, self.position.y + self.radius - 90,
 							 HEALTH_BAR_WIDTH * life_bar_value,
 							 HEALTH_BAR_HEIGHT))
 		else:
@@ -56,21 +60,8 @@ class Tower(ArtifactInterface):
 							 HEALTH_BAR_WIDTH * life_bar_value,
 							 HEALTH_BAR_HEIGHT))
 
-	def move(self, x_inc=0, y_inc=0):
-		self.position += pygame.Vector2(x_inc, -y_inc)
-
 	def in_range(self, objects):
-		objects_in_range = []
-		for obj in objects:
-			if obj.id != self.id:
-				distance = self.position.distance_to(obj.position)
-				if distance < self.range + obj.radius:
-					objects_in_range.append(obj)
-		return sorted(objects_in_range, key=lambda artifact: artifact.artifact_type, reverse=True)
-
-	def hit(self, surface, target):
-		pygame.draw.line(surface, self.color, self.position - self.shoot_position, target.position, 2)
-		self.draw(surface)
+		return None
 
 	def collision(self, objects):
 		for obj in objects:

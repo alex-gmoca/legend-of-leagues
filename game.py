@@ -3,6 +3,7 @@
 import pygame
 import sys
 import time
+import copy
 
 from pygame.locals import *
 
@@ -10,9 +11,10 @@ from pygame.locals import *
 from tower import Tower
 from champion import Champion
 from minion import Minion
+from nexus import Nexus
 
 #import functions
-from utils import is_pointing_enemy, manage_waves
+from utils import is_pointing_enemy, manage_waves, get_game_over_sprite
 
 #import constants
 from constants import TARGET_FPS
@@ -22,9 +24,6 @@ pygame.init()
 surface = pygame.display.set_mode((800, 800))
 pygame.display.set_caption('Legend of leagues!')
 running = True
-color = [0, 0, 0]
-pygame.display.get_surface().fill(color)
-pygame.display.update()
 cursor_img = pygame.image.load('sprites/normal.png')
 attack_cursor_img = pygame.image.load('sprites/text.png')
 clock = pygame.time.Clock()
@@ -32,8 +31,26 @@ clock = pygame.time.Clock()
 objects = []
 
 champion = Champion(sprite_sheet='sprites/champion.png', team='blue')
-objects.append(Tower(y=400, team='red'))
-objects.append(Tower(y=100, team='red'))
+#nexus
+red_nexus = Nexus(x=745, y=80, team='red')
+objects.append(red_nexus)
+#1 tier tower
+objects.append(Tower(x=40, y=380, team='red'))
+objects.append(Tower(x=420, y=710, team='red'))
+objects.append(Tower(x=296, y=480, team='red'))
+#2 tier tower
+objects.append(Tower(x=40, y=60, team='red'))
+objects.append(Tower(x=760, y=710, team='red'))
+objects.append(Tower(x=460, y=300, team='red'))
+#inhib tower
+objects.append(Tower(x=450, y=60, team='red'))
+objects.append(Tower(x=760, y=250, team='red'))
+objects.append(Tower(x=586, y=170, team='red'))
+#nexus towers
+objects.append(Tower(x=665, y=60, team='red'))
+objects.append(Tower(x=760, y=110, team='red'))
+
+
 objects.append(champion)
 
 pygame.display.flip()
@@ -45,7 +62,7 @@ new_objects = []
 delete_objects = []
 last_spawn_time = time.time()
 direction = pygame.Vector2(0, 0)
-mouse_target_position = pygame.Vector2(400, 780)
+mouse_target_position = pygame.Vector2(champion.position.x, champion.position.y)
 
 while running:
 	#check for quit event
@@ -53,7 +70,25 @@ while running:
 		if event.type == pygame.QUIT:
 			running = False
 
+	#check for game ending
+	if red_nexus.current_hp <= 0:
+		print('You win!')
+		game_over_sprite = get_game_over_sprite()
+		#show game over screen with transition effect
+		for x in range(1020):
+			if x % 4 == 0:
+				game_over_sprite.set_alpha(x//4)
+				surface.blit(game_over_sprite, (145, 280))
+				pygame.display.update()
+			else:
+				time.sleep(0.01)
+		time.sleep(15)
+		running = False
+
 	#restart surface
+	#background = pygame.image.load("sprites/background2.png")
+	#surface.blit(background, (0, 0))
+	#no background
 	surface.fill((0, 0, 0))
 
 	#move and draw objects, hit enemies
@@ -70,21 +105,34 @@ while running:
 				obj.draw(surface)
 		else:
 			obj.draw(surface)
-		if obj.artifact_type != 'champion':
+		if obj.artifact_type == 'minion':
 			if not obj.collision(objects):
-				obj.move(0, obj.velocity)
+				obj.move()
 
 	#manage champion movement
 	click = pygame.mouse.get_pressed()
 	direction, mouse_target_position = champion.move(click, direction, mouse_target_position)
+	#manage keyboard events
+	keys = pygame.key.get_pressed()
+	if keys[pygame.K_d] and champion.summoner_spell_d.last_execution is None:
+		last_summoner_spell_d_position = copy.deepcopy(champion.position)
+		animation_gradient = 700
+		champion = champion.summoner_spell_d.cast(mouse_target_position, champion)
+	if champion.summoner_spell_d.last_execution and champion.summoner_spell_d.last_execution > time.time() - champion.summoner_spell_d.animation_duration:
+		champion.summoner_spell_d.draw_animation(surface, last_summoner_spell_d_position, animation_gradient)
+		animation_gradient -= 10
+
+	#draw champion summoners spells uid
+	champion.summoner_spell_d.draw(surface)
+	#champion.summoner_spell_f.draw(surface)
 
 	#manage waves
 	current_time = time.time()
 	if minion_spacer > 50:
-		new_minion = None
-		new_minion, minions_count, last_spawn_time = manage_waves(current_time, minions_count, last_spawn_time)
-		if new_minion:
-			new_objects.append(new_minion)
+		new_minions = None
+		new_minions, minions_count, last_spawn_time = manage_waves(current_time, minions_count, last_spawn_time)
+		if new_minions:
+			new_objects.extend(new_minions)
 			minion_spacer = 0
 	else:
 		minion_spacer += 1
